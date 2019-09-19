@@ -1,0 +1,84 @@
+service: fp-apac-cognito-service
+app: fp-apac-cognito-service
+#tenant: your-tenant-name
+frameworkVersion: '>=1.28.0 <2.0.0'
+
+provider:
+  name: aws
+  runtime: go1.x
+  stage: ${opt:stage, 'dev'}
+  region: ap-southeast-1
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - 'cognito-identity:*'
+        - 'cognito-sync:*'
+        - 'cognito-idp:*'
+      Resource:
+        - "*"
+
+package:
+  exclude:
+    - ./**
+  include:
+    - ./bin/**
+
+functions:
+  authenticate_user:
+    handler: bin/authenticate_user
+    events:
+      - http:
+          path: /api/v1/user/auth
+          method: post
+  create_user:
+    handler: bin/create_user
+    events:
+      - http:
+          path: /api/v1/user
+          method: post
+  delete_user:
+    handler: bin/delete_user
+    events:
+      - http:
+          path: /api/v1/user/delete
+          method: post
+  list_user:
+    handler: bin/list_user
+    events:
+      - http:
+          path: /api/v1/users
+          method: post
+  create_userpool:
+    handler: bin/create_user_pool
+    events:
+      - http:
+          path: /api/v1/userpool
+          method: post
+  list_userpool:
+    handler: bin/list_user_pool
+    events:
+      - http:
+          path: /api/v1/userpools/{max}
+          method: get
+          request:
+            parameters:
+              paths:
+                max: true
+  list_userpool_client:
+    handler: bin/list_user_pool_client
+    events:
+      - http:
+          path: /api/v1/userpools/client
+          method: post
+  describe_userpool_client:
+    handler: bin/describe_userpool_client
+    events:
+      - http:
+          path: /api/v1/userpools/client/describe
+          method: post
+  create_userpool_client:
+    handler: bin/create_userpool_client
+    events:
+      - http:
+          path: /api/v1/userpools/client/create
+          method: post
