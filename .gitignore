@@ -4,6 +4,8 @@
 # golang output binary directory
 bin
 
+.idea/
+
 # golang vendor (dependencies) directory
 vendor
 
