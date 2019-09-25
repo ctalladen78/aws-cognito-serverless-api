@@ -24,6 +24,10 @@ package:
     - ./bin/**
 
 functions:
+  postConfirm:
+    handler: bin/verify_email
+  preSignUp:
+    handler: bin/auto_verify
   authenticate_user:
     handler: bin/authenticate_user
     events:
@@ -47,6 +51,18 @@ functions:
     events:
       - http:
           path: /api/v1/users
+          method: post
+  confirm_forgot_password:
+    handler: bin/confirm_forgot_password
+    events:
+      - http:
+          path: /api/v1/user/password/forgot/confirm
+          method: post
+  forgot_password:
+    handler: bin/forgot_password
+    events:
+      - http:
+          path: /api/v1/user/password/forgot
           method: post
   create_userpool:
     handler: bin/create_user_pool

@@ -13,6 +13,14 @@ type LoginRequest struct {
 	ClientID string `json:"client_id"`
 }
 
+type ForgotPasswordRequest struct {
+	Email string `json:"email_address"`
+	Password string `json:"password,omitempty"`
+	ClientID string `json:"client_id"`
+	Code string `json:"confirmation_code"`
+}
+
+
 type UserItem struct {
 	UserPoolID string `json:"user_pool_id"`
 	User NewUserItem `json:"user"`
@@ -22,6 +30,8 @@ type NewUserItem struct {
 	Name string `json:"name"`
 	Email string `json:"email_address"`
 	Password string `json:"password, omitempty"`
+	EmailVerified string `json:"email_verified"`
+	Confirmed string `json:"is_confirmed"`
 }
 
 type Config struct {
@@ -62,6 +72,7 @@ func (config Config) AddUser(user UserItem) (response UserResponse) {
 		DesiredDeliveryMediums: []*string{
 			aws.String("EMAIL"),
 		},
+		MessageAction: aws.String("SUPPRESS"),
 		UserAttributes: []*cognitoidentityprovider.AttributeType{
 			{
 				Name:  aws.String("email"),
@@ -70,6 +81,10 @@ func (config Config) AddUser(user UserItem) (response UserResponse) {
 			{
 				Name:  aws.String("name"),
 				Value: aws.String(user.User.Name),
+			},
+			{
+				Name:  aws.String("email_verified"),
+				Value: aws.String("true"),
 			},
 		},
 	}
@@ -145,12 +160,17 @@ func (config Config) ListUser(item UserItem) (response UserResponse){
 			Name:  "",
 			Email: "",
 		}
+		fmt.Println("Users ", user.String())
 		attributes := user.Attributes
 		for _, a := range attributes {
 			if *a.Name == "name" {
 				newUser.Name = *a.Value
 			} else if *a.Name == "email" {
 				newUser.Email = *a.Value
+			} else if *a.Name == "email_verified" {
+				newUser.EmailVerified = *a.Value
+			} else if *a.Name == "is_confirmed" {
+				newUser.Confirmed = *a.Value
 			}
 		}
 		usersList = append(usersList, newUser)
@@ -181,6 +201,34 @@ func (config Config) AuthenticateUser(request LoginRequest) (string,int) {
 	}
 	fmt.Println("Result ", authResp)
 	return authResp.String(), 200
+}
+
+func (config Config) ForgotPassword(request LoginRequest) (string, int) {
+	input := &cognitoidentityprovider.ForgotPasswordInput{
+		ClientId:          aws.String(request.ClientID),
+		Username:          aws.String(request.Email),
+	}
+	output, error := config.CognitoClient.ForgotPassword(input)
+	if error != nil {
+		return error.Error(), 500
+	}
+
+	return output.String(), 200
+}
+
+func (config Config) ConfirmForgotPassword(request ForgotPasswordRequest) (string, int) {
+	input := &cognitoidentityprovider.ConfirmForgotPasswordInput{
+		ClientId:         aws.String(request.ClientID),
+		ConfirmationCode: aws.String(request.Code),
+		Username:         aws.String(request.Email),
+		Password: aws.String(request.Password),
+	}
+	output, error := config.CognitoClient.ConfirmForgotPassword(input)
+	if error != nil {
+		return error.Error(), 500
+	}
+
+	return output.String(), 200
 }
 
 func (config Config) ObjectToJsonString (response UserResponse) string {
